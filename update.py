@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch recent arXiv Atom entries and rebuild the static daily digest."""
+"""Collect arXiv and selected journals into a rolling physics digest."""
 from __future__ import annotations
 
 import json
@@ -52,11 +52,16 @@ RULES = {
         r"quantum chromodynamics|beyond the standard model)\b", re.I),
 }
 
-def normalize_entry(paper_id: str, title: str, summary: str, authors: str, published: str, categories: list[str]) -> dict | None:
+def classify(title, summary, categories):
     haystack = f"{title} {summary}"
     topics = [key for key, pattern in RULES.items() if pattern.search(haystack)]
     if "particle" not in topics and any(cat in PARTICLE_CATEGORIES for cat in categories):
         topics.append("particle")
+    return topics
+
+
+def normalize_entry(paper_id, title, summary, authors, published, categories):
+    topics = classify(title, summary, categories)
     if not topics:
         return None
     return {"id": paper_id, "title": title, "summary": summary, "authors": authors,
@@ -147,10 +152,12 @@ def main() -> None:
             except Exception as exc:
                 print(f"Atom failed {category}: {exc}", flush=True)
 
-    if not by_id:
-        raise SystemExit("No arXiv entries were fetched; existing daily.js was left unchanged.")
-
+    from journal_sources import journal_papers
     today = datetime.now(CST).date()
+    for paper in journal_papers(today - timedelta(days=RETENTION_DAYS - 1), today, classify):
+        by_id[paper['id']] = paper
+    if not by_id:
+        raise SystemExit('No papers fetched; preserving existing archive.')
     batches: dict[str, dict] = {}
     # Keep prior generated batches so the six-date history grows across daily runs.
     if DATA_FILE.exists():

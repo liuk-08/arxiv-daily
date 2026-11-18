@@ -9,4 +9,8 @@
   .topic-label{max-width:100%;overflow-wrap:anywhere}
   .filter-input{min-width:0}
 }
+.source-badge,.reviewed{display:inline-block;border-radius:4px;padding:2px 6px;font:600 11px var(--sans);background:#edf2fb;color:#284b83}
+.source-badge.journal,.reviewed{background:#e8f5ef;color:#186444}
+.paper-controls{flex-wrap:wrap}.papers-heading{flex-wrap:wrap}.paper-meta{overflow-wrap:anywhere}
+@media(max-width:600px){.filter-input{flex:1 0 100%}.paper-controls select{flex:1;max-width:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
