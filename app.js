@@ -1,10 +1,17 @@
 const topics={
  sensing:{name:'量子精密测量',category:'arXiv quant-ph / physics.atom-ph / physics.ins-det',icon:'◉',desc:'原子磁力计、自旋压缩、量子传感与低噪声读出'},
- dark:{name:'暗物质探测',category:'arXiv hep-ph / astro-ph.CO / physics.ins-det',icon:'✳',desc:'轴子、暗光子、超轻暗物质与直接探测'},
- foundations:{name:'量子力学基础问题',category:'arXiv quant-ph',icon:'⚛',desc:'测量问题、贝尔非定域性与量子理论基础'}
+ dark:{name:'暗物质',category:'arXiv hep-ph / astro-ph.CO / physics.ins-det',icon:'✳',desc:'暗物质模型、宇宙学证据与探测实验'},
+ foundations:{name:'量子力学基础问题',category:'arXiv quant-ph',icon:'⚛',desc:'测量问题、贝尔非定域性与量子理论基础'},
+ computing:{name:'量子计算',category:'arXiv quant-ph',icon:'⊗',desc:'量子算法、量子纠错与计算架构'},
+ qgravity:{name:'量子引力',category:'arXiv gr-qc / hep-th',icon:'◇',desc:'时空量子化、黑洞量子效应与全息理论'},
+ particle:{name:'粒子物理',category:'arXiv hep-ph / hep-ex',icon:'⊙',desc:'粒子唯象、对撞机实验与标准模型检验'}
 };
 const dataset=window.DSH_DAILY_DATA||null;
-const topicOrder=['sensing','dark','foundations'];
+const topicOrder=Object.keys(topics);
+const topicFilter=document.getElementById('topic-filter');
+for(const key of topicOrder){
+ topicFilter.add(new Option(topics[key].name,key));
+}
 let selectedDate=null;
 let selectedTopic='all';
 let searchText='';
@@ -36,7 +43,7 @@ function renderPapers(){
  const list=document.getElementById('paper-list');
  if(!selectedDate){list.innerHTML='<div class="load-state">等待每日论文数据。</div>';return}
  if(!papers.length){list.innerHTML='<div class="empty-state">该批次在当前主题和关键词筛选下没有匹配论文。</div>';return}
- list.innerHTML=papers.map(p=>`<article class="paper-row"><h3 class="paper-title"><a href="${esc(p.url)}" target="_blank" rel="noreferrer">${esc(p.title)}</a></h3><div class="paper-meta"><span class="arxiv-id">${esc(p.id)}</span><span>${esc(p.authors)}</span><span>提交于 ${esc(p.published||selectedDate)}</span></div><p class="paper-abstract">${esc(p.summary)}</p><div class="paper-tags">${(p.topics||[]).map(k=>`<span class="paper-tag">${topics[k].name}</span>`).join('')}${(p.categories||[]).slice(0,3).map(c=>`<span class="paper-tag">${esc(c)}</span>`).join('')}</div></article>`).join('');
+ list.innerHTML=papers.map(p=>`<article class="paper-row"><h3 class="paper-title"><a href="${esc(p.url)}" target="_blank" rel="noreferrer">${esc(p.title)}</a></h3><div class="paper-meta"><span class="arxiv-id">${esc(p.id)}</span><span>${esc(p.authors)}</span><span>提交于 ${esc(p.published||selectedDate)}</span></div><p class="paper-abstract">${esc(p.summary)}</p><div class="paper-tags">${(p.topics||[]).map(k=>`<span class="paper-tag">${esc(topics[k]?.name||k)}</span>`).join('')}${(p.categories||[]).slice(0,3).map(c=>`<span class="paper-tag">${esc(c)}</span>`).join('')}</div></article>`).join('');
 }
 document.getElementById('paper-filter').addEventListener('input',e=>{searchText=e.target.value.trim().toLowerCase();renderPapers()});
 document.getElementById('topic-filter').addEventListener('change',e=>{selectedTopic=e.target.value;renderPapers()});

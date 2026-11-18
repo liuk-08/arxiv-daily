@@ -24,17 +24,39 @@ CST = timezone(timedelta(hours=8))
 RETENTION_DAYS = 30
 
 # Search broad source categories first; the local rules below assign topic labels.
-CATEGORIES = ["quant-ph", "physics.atom-ph", "physics.ins-det", "hep-ph", "astro-ph.CO"]
-RSS_CATEGORIES = CATEGORIES + ["gr-qc"]
+PARTICLE_CATEGORIES = ("hep-ph", "hep-ex", "hep-lat")
+CATEGORIES = ["quant-ph", "cs.CC", "physics.atom-ph", "physics.ins-det", "astro-ph.CO",
+              "gr-qc", "astro-ph.HE", "astro-ph.GA", *PARTICLE_CATEGORIES, "hep-th"]
+RSS_CATEGORIES = CATEGORIES
 RULES = {
     "sensing": re.compile(r"\b(quantum metrolog\w*|quantum sens\w*|atomic magnetometr\w*|magnetometr\w*|serf|spin squeez\w*|optically pumped|precision measurement|sensitivity enhancement|atomic clock\w*|spin-exchange relaxation)\b", re.I),
-    "dark": re.compile(r"\b(dark matter|dark photon|axion\w*|ALP\b|WIMP\w*|ultralight dark|light dark matter|haloscope\w*|direct detection|hidden photon)\b", re.I),
+    "dark": re.compile(
+        r"\b(dark[ -](?:matter|photons?|sectors?|halos?)|axion\w*|ALPs?|WIMPs?|"
+        r"ultralight dark|haloscope\w*|direct detection|hidden photons?|"
+        r"relic (?:abundance|density)|thermal relics?|galactic rotation curves?|"
+        r"halo substructure|self[ -]interacting DM|(?:Lambda[ -]?|Λ)CDM)\b", re.I),
     "foundations": re.compile(r"\b(quantum foundation\w*|measurement problem|quantum measurement\w*|Bell inequalities?|Bell nonlocal\w*|nonlocality|contextuality|quantum interpretation\w*|wave function collapse|collapse model\w*|ψ-ontology|born rule|quantum ontology)\b", re.I),
+    "computing": re.compile(
+        r"\b(quantum[ -](?:comput\w*|algorithms?|circuits?|processors?|gates?|"
+        r"error[ -]correction|advantage|anneal\w*)|logical qubits?|qubit gates?|"
+        r"fault[ -]tolerant qubits?|variational quantum eigensolver\w*)\b", re.I),
+    "qgravity": re.compile(
+        r"\b(quantum[ -](?:gravity|gravitational|spacetime|geometry|cosmology)|"
+        r"gravit(?:y|ational) quantization|gravitons?|spin[ -]foams?|causal sets?|"
+        r"causal dynamical triangulations?|asymptotically safe gravity|"
+        r"string theor(?:y|ies)|AdS\s*/\s*CFT|gauge[ -]gravity duality|holographic duality|"
+        r"black[ -]hole information paradox)\b", re.I),
+    "particle": re.compile(
+        r"\b(particle physics|elementary particles?|quarks?|leptons?|neutrinos?|"
+        r"Higgs(?: bosons?)?|particle colliders?|large hadron collider|lattice QCD|"
+        r"quantum chromodynamics|beyond the standard model)\b", re.I),
 }
 
 def normalize_entry(paper_id: str, title: str, summary: str, authors: str, published: str, categories: list[str]) -> dict | None:
     haystack = f"{title} {summary}"
     topics = [key for key, pattern in RULES.items() if pattern.search(haystack)]
+    if "particle" not in topics and any(cat in PARTICLE_CATEGORIES for cat in categories):
+        topics.append("particle")
     if not topics:
         return None
     return {"id": paper_id, "title": title, "summary": summary, "authors": authors,
@@ -67,7 +89,7 @@ def request_rss(category: str) -> list[dict]:
         except ValueError:
             published = datetime.now(CST).date().isoformat()
         creators = [x.text or "" for x in node.findall("{http://purl.org/dc/elements/1.1/}creator")]
-        categories = [x.text or "" for x in node.findall("category")]
+        categories = [term for x in node.findall("category") for term in (x.text or "").split()] or [category]
         paper = normalize_entry(paper_id, node.findtext("title", default=""), summary, ", ".join(creators), published, categories)
         if paper:
             entries.append(paper)
