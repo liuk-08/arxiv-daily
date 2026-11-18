@@ -34,7 +34,7 @@ MAX_PAGES = 50  # 5,000 records per journal per window; partial results survive 
 
 def fetch_page(issn, start, end, cursor, rows):
     params = {'filter': f'type:journal-article,from-pub-date:{start},until-pub-date:{end}',
-              'rows': rows, 'cursor': cursor, 'select': FIELDS, 'sort': 'published', 'order': 'desc'}
+              'rows': rows, 'cursor': cursor, 'select': FIELDS}
     if os.environ.get('CROSSREF_MAILTO'):
         params['mailto'] = os.environ['CROSSREF_MAILTO']
     req = Request(f'https://api.crossref.org/journals/{issn}/works?' + urlencode(params),
